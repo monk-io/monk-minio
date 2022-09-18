@@ -1,0 +1,21 @@
+namespace: monk-minio
+
+stack:
+  defines: process-group
+  runnable-list:
+    - monk-minio/minio1
+    - monk-minio/minio2
+    - monk-minio/nginx
+  variables:
+    monk_minio_port:
+      env: MINIO_PORT
+      type: int
+      value: 9000
+    monk_console_port:
+      env: MINIO_CONSOLE_PORT
+      type: int
+      value: 9001
+    monk_minio_admin_password:
+      value: password
+    monk_minio_admin_username:
+      value: admin
