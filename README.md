@@ -80,6 +80,9 @@ foo@bar:~$ monk run monk-minio/stack
 💡 Check monk help for more!
 ```
 
+## Access Console
+
+http://13.49.125.144:81/login
 
 ## Variables
 The variables are in `stack.yml` file. You can quickly setup by editing the values here.
