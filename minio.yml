@@ -12,9 +12,12 @@ minio-common:
   containers:
     defines: containers
     monk-minio:
-      image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
-      # bash: sleep 3600
-      bash: minio server --console-address ":$MINIO_CONSOLE_PORT" $SERVER_LIST
+      ports:
+        - <- `0.0.0.0:9000:9000`
+        - <- `0.0.0.0:9001:9001`
+      image: quay.io/minio/minio:latest
+      bash: sleep 3600
+      #bash: sleep 30; minio server --console-address ":$MINIO_CONSOLE_PORT" $SERVER_LIST
       paths:
         - <- `${volume_local}/data1:/data1`
         - <- `${volume_local}/data2:/data2`
@@ -74,12 +77,6 @@ minio2:
     volume_local:
       type: string
       value: <- `${monk-volume-path}/monk-minio2`
-  depends:
-    wait-for:
-      runnables:
-        - monk-minio/minio1
-      timeout: 30
-
 
 nginx:
   defines: runnable
@@ -146,22 +143,21 @@ nginx:
             }
         }
       mode: 511
+      container: monk-minio-reverse-proxy
       path: /opt/bitnami/nginx/conf/server_blocks/reverse_proxy.conf
-      container: nginx-reverse-proxy
   containers:
-    defines: containers
-    nginx-reverse-proxy:
+    monk-minio-reverse-proxy:
       image-tag: latest
       image: docker.io/bitnami/nginx
       ports:
-      - <- `0.0.0.0:${monk_minio_port}:9000/tcp`
-      - <- `0.0.0.0:${monk_console_port}:9001/tcp`
+        - <- `0.0.0.0:${listen-api-port}:9000/tcp`
+        - <- `0.0.0.0:${listen-port}:9001/tcp`
   variables:
-    proxy-target-host:
-      value: <- get-hostname("monk-wordpress-nginx/wordpress", "wordpress") split(".dns.podman") join("")
-      type: string
     listen-port:
-      value: "80"
+      value: <- $console_port
+      type: string
+    listen-api-port:
+      value: <- $api_port
       type: string
     server-name:
       value: <- $server_name
@@ -174,4 +170,10 @@ nginx:
       value: <- get-hostname("monk-minio/minio1", "monk-minio") split(".dns.podman") join("")
     proxy-target-port:
       type: string
-      value: "80"
+      value: 80
+  depends:
+    wait-for:
+      runnables:
+        - monk-minio/minio1
+        - monk-minio/minio2
+      timeout: 120

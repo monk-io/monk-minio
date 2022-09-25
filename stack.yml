@@ -19,3 +19,9 @@ stack:
       value: password
     monk_minio_admin_username:
       value: admin
+    server_name:
+      value: minio.monk.io
+    listen_port:
+      value: 81
+    listen_api_port:
+      value: 80
