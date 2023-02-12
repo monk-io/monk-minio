@@ -1,11 +1,11 @@
-namespace: monk-minio
+namespace: minio
 
 stack:
   defines: process-group
   runnable-list:
-    - monk-minio/minio1
-    - monk-minio/minio2
-    - monk-minio/nginx
+    - minio/minio1
+    - minio/minio2
+    - minio/nginx
   variables:
     monk_minio_port:
       env: MINIO_PORT

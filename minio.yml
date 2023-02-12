@@ -1,4 +1,4 @@
-namespace: monk-minio
+namespace: minio
 
 minio-common:
   metadata:
@@ -9,15 +9,22 @@ minio-common:
     website: https://min.io/
     publisher: monk.io
     icon: https://min.io/resources/img/logo.svg 
+  connections:
+    minio1:
+      runnable: minio/minio1
+      service: minio-console-svc 
+    minio2:
+      runnable: minio/minio2
+      service: minio-console-svc
   containers:
     defines: containers
-    monk-minio:
+    minio:
       ports:
         - <- `0.0.0.0:9000:9000`
         - <- `0.0.0.0:9001:9001`
       image: quay.io/minio/minio:latest
-      bash: sleep 3600
-      #bash: sleep 30; minio server --console-address ":$MINIO_CONSOLE_PORT" $SERVER_LIST
+      # bash: sleep 3600
+      bash: sleep 15; minio server --console-address ":$MINIO_CONSOLE_PORT" $SERVER_LIST
       paths:
         - <- `${volume_local}/data1:/data1`
         - <- `${volume_local}/data2:/data2`
@@ -38,14 +45,16 @@ minio-common:
       type: string
       value: <- `${monk-volume-path}/monk-minio`
     minio1_dns:
+      env: MINIO1_DNS
       type: string
-      value: <- get-hostname("monk-minio/minio1", "monk-minio") split(".dns.podman") join("")
+      value: <- connection-hostname("minio1")
     minio1_data:
       type: string
       value: <- `http://${minio1_dns}/data1 http://${minio1_dns}/data2`
     minio2_dns:
+      env: MINIO2_DNS
       type: string
-      value: <- get-hostname("monk-minio/minio2", "monk-minio") split(".dns.podman") join("")
+      value: <- connection-hostname("minio2")
     minio2_data:
       type: string
       value: <- `http://${minio2_dns}/data1 http://${minio2_dns}/data2`
@@ -59,19 +68,28 @@ minio-common:
     minio_admin_username:
       env: MINIO_ROOT_USER
       value: <- $monk_minio_admin_username
+  services:
+    minio-console-svc:
+      container: minio
+      port: 9001
+      protocol: tcp
+    minio-svc:
+      container: minio
+      port: 9000
+      protocol: tcp
 
 minio1:
   defines: runnable
-  inherits: ./minio-common
+  inherits: minio/minio-common
   variables:
     defines: variables
     volume_local:
       type: string
       value: <- `${monk-volume-path}/monk-minio1`
-  
+
 minio2:
   defines: runnable
-  inherits: ./minio-common
+  inherits: minio/minio-common
   variables:
     defines: variables
     volume_local:
@@ -80,7 +98,20 @@ minio2:
 
 nginx:
   defines: runnable
-  inherits: nginx
+  inherits: monk/nginx
+  connections:
+    minio1-console:
+      runnable: minio/minio1
+      service: minio-console-svc
+    minio2-console:
+      runnable: minio/minio2
+      service: minio-console-svc
+    minio1:
+      runnable: minio/minio1
+      service: minio-svc
+    minio2:
+      runnable: minio/minio2
+      service: minio-svc
   files:
     server-def:
       contents: |
@@ -96,7 +127,7 @@ nginx:
         }
         server {
           listen 0.0.0.0:{{ v "monk_minio_port" }};
-          server_name {{ v "server-name" }};
+          server_name {{ v "server_name" }};
           ignore_invalid_headers off;
           client_max_body_size 0;
           proxy_buffering off;
@@ -119,7 +150,7 @@ nginx:
         }
         server {
             listen 0.0.0.0:{{ v "monk_console_port" }};
-            server_name {{ v "server-name" }};
+            server_name {{ v "server_name" }};
             ignore_invalid_headers off;
             client_max_body_size 0;
             proxy_buffering off;
@@ -143,37 +174,28 @@ nginx:
             }
         }
       mode: 511
-      container: monk-minio-reverse-proxy
+      container: minio-reverse-proxy
       path: /opt/bitnami/nginx/conf/server_blocks/reverse_proxy.conf
   containers:
-    monk-minio-reverse-proxy:
+   minio-reverse-proxy:
       image-tag: latest
-      image: docker.io/bitnami/nginx
+      image: bitnami/nginx
       ports:
-        - <- `0.0.0.0:${listen-api-port}:9000/tcp`
-        - <- `0.0.0.0:${listen-port}:9001/tcp`
+        - <- `0.0.0.0:${listen_api_port}:9000`
+        - <- `0.0.0.0:${listen_port}:9001`
   variables:
-    listen-port:
-      value: <- $console_port
-      type: string
-    listen-api-port:
-      value: <- $api_port
-      type: string
-    server-name:
-      value: <- $server_name
-      type: string
     minio2_dns:
       type: string
-      value: <- get-hostname("monk-minio/minio2", "monk-minio") split(".dns.podman") join("")
+      value: <- connection-hostname("minio2") split(".dns.podman") join("")
     minio1_dns:
       type: string
-      value: <- get-hostname("monk-minio/minio1", "monk-minio") split(".dns.podman") join("")
+      value: <- connection-hostname("minio1") split(".dns.podman") join("")
     proxy-target-port:
       type: string
       value: 80
   depends:
     wait-for:
       runnables:
-        - monk-minio/minio1
-        - monk-minio/minio2
+        - minio/minio1
+        - minio/minio2
       timeout: 120
