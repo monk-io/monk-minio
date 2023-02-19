@@ -98,7 +98,6 @@ minio2:
 
 nginx:
   defines: runnable
-  inherits: monk/nginx
   connections:
     minio1-console:
       runnable: minio/minio1
