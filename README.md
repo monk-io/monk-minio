@@ -1,13 +1,16 @@
 # Minio & Monk
+
 This repository contains Monk.io template to deploy Minio Cluster either locally or on cloud of your choice (AWS, GCP, Azure, Digital Ocean).
 
-# Prerequisites
+## Prerequisites
+
 - [Install Monk](https://docs.monk.io/docs/get-monk)
 - [Register and Login Monk](https://docs.monk.io/docs/acc-and-auth)
 - [Add Cloud Provider](https://docs.monk.io/docs/cloud-provider)
 - [Add Instance](https://docs.monk.io/docs/multi-cloud)
 
-#### Make sure monkd is running.
+## Make sure monkd is running
+
 ```bash
 foo@bar:~$ monk status
 daemon: ready
@@ -16,18 +19,18 @@ not connected to cluster
 ```
 
 ## Clone Repository
+
 ```bash
 git clone https://github.com/Burakhan/monk-minio
 ```
 
 ## Load Template
+
 ```bash
 cd monk-minio
 monk load MANIFEST
 ```
 
-
-#### Let's take a look at the themes I have installed.
 ```bash
 foo@bar:~$ monk list monk-minio
 ✔ Got the list
@@ -40,6 +43,7 @@ runnable  monk-minio/stack  local       -        -
 ```
 
 ## Deploy Stack
+
 ```bash
 foo@bar:~$ monk run monk-minio/stack
 ? Select tag to run [local/monk-minio/stack] on: monk
@@ -74,29 +78,28 @@ foo@bar:~$ monk run monk-minio/stack
           └─💾 /var/lib/monkd/volumes/monk-minio2/data1 -> /data1
 
 💡 You can inspect and manage your above stack with these commands:
-	monk logs (-f) local/monk-minio/stack - Inspect logs
-	monk shell     local/monk-minio/stack - Connect to the container's shell
-	monk do        local/monk-minio/stack/action_name - Run defined action (if exists)
+ monk logs (-f) local/monk-minio/stack - Inspect logs
+ monk shell     local/monk-minio/stack - Connect to the container's shell
+ monk do        local/monk-minio/stack/action_name - Run defined action (if exists)
 💡 Check monk help for more!
 ```
 
 ## Access Console
 
-http://13.49.125.144:81/login
+[http://13.49.125.144/login](http://13.49.125.144:81/login)
 
 ## Variables
+
 The variables are in `stack.yml` file. You can quickly setup by editing the values here.
 
-| Variable                     	| Description                               	|
-|------------------------------	|-------------------------------------------	|
-| monk_minio_port               | Minio Node Port, Default: 9000 	               |
-| monk_console_port             | Minio Node Console Port, Default 9001                     	|
-| monk_minio_admin_password     | Minio Admin Password, Default: password                     	|
-| monk_minio_admin_username     | Minio Admin Username, Default: admin                     	|
-| listen_port                   | Minio LB Port Default: 81                     	|
-| listen_api_port               | Minio LB Console Port Default: 80                     	|
-
-
+| Variable                  | Description                             |
+| ------------------------- | --------------------------------------- |
+| monk_minio_port           | Minio Node Port, Default: 9000          |
+| monk_console_port         | Minio Node Console Port, Default 9001   |
+| monk_minio_admin_password | Minio Admin Password, Default: password |
+| monk_minio_admin_username | Minio Admin Username, Default: admin    |
+| listen_port               | Minio LB Port Default: 81               |
+| listen_api_port           | Minio LB Console Port Default: 80       |
 
 ## Stop, remove and clean up workloads and templates
 

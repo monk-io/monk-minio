@@ -1,7 +1,16 @@
+---
 namespace: minio
 
 stack:
   defines: process-group
+  metadata:
+    name: MinIO | High Performance, Kubernetes Native Object Storage
+    description: High Performance Object Storage is Open Source, Amazon S3 compatible, Kubernetes Native and is designed for cloud native workloads like AI.
+    tags: High Performance Object Storage, Multi-Cloud, Hybrid Cloud, Object Storage, Object Storage for AI, Cloud Storage, S3 Compatible, Golang, AWS S3, Amazon S3, Open Source Cloud Storage, Ceph, OpenStack Swift, Microsoft Azure Blobstore, Google Cloud Storage, Cloud Foundry Blobstore, Cloud Foundry
+      Bosh, Artifact Storage, DC/OS, Kubernetes, Docker, Container Storage, Blobstore, NAS, Gluster, GlusterFS, PACS, VNA, Archive, Secondary Storage, Backup Storage, Snapshots Hybrid, OnPrem, Private Cloud
+    website: https://min.io/
+    publisher: monk.io
+    icon: https://min.io/resources/img/logo.svg
   runnable-list:
     - minio/minio1
     - minio/minio2

@@ -1,42 +1,40 @@
+---
 namespace: minio
 
 minio-common:
   metadata:
-    defines: metadata
     name: MinIO | High Performance, Kubernetes Native Object Storage
     description: High Performance Object Storage is Open Source, Amazon S3 compatible, Kubernetes Native and is designed for cloud native workloads like AI.
-    tags: High Performance Object Storage, Multi-Cloud, Hybrid Cloud, Object Storage, Object Storage for AI, Cloud Storage, S3 Compatible, Golang, AWS S3, Amazon S3, Open Source Cloud Storage, Ceph, OpenStack Swift, Microsoft Azure Blobstore, Google Cloud Storage, Cloud Foundry Blobstore, Cloud Foundry Bosh, Artifact Storage, DC/OS, Kubernetes, Docker, Container Storage, Blobstore, NAS, Gluster, GlusterFS, PACS, VNA, Archive, Secondary Storage, Backup Storage, Snapshots Hybrid, OnPrem, Private Cloud
+    tags: High Performance Object Storage, Multi-Cloud, Hybrid Cloud, Object Storage, Object Storage for AI, Cloud Storage, S3 Compatible, Golang, AWS S3, Amazon S3, Open Source Cloud Storage, Ceph, OpenStack Swift, Microsoft Azure Blobstore, Google Cloud Storage, Cloud Foundry Blobstore, Cloud Foundry
+      Bosh, Artifact Storage, DC/OS, Kubernetes, Docker, Container Storage, Blobstore, NAS, Gluster, GlusterFS, PACS, VNA, Archive, Secondary Storage, Backup Storage, Snapshots Hybrid, OnPrem, Private Cloud
     website: https://min.io/
     publisher: monk.io
-    icon: https://min.io/resources/img/logo.svg 
-  connections:
-    minio1:
-      runnable: minio/minio1
-      service: minio-console-svc 
-    minio2:
-      runnable: minio/minio2
-      service: minio-console-svc
+    icon: https://min.io/resources/img/logo.svg
+    private: true
+  # connections:
+  #   minio1:
+  #     runnable: minio/minio1
+  #     service: minio-console-svc
+  #   minio2:
+  #     runnable: minio/minio2
+  #     service: minio-console-svc
   containers:
-    defines: containers
     minio:
-      ports:
-        - <- `0.0.0.0:9000:9000`
-        - <- `0.0.0.0:9001:9001`
+      # ports:
+      #   - 9000
+      #   - 9001
       image: quay.io/minio/minio:latest
-      # bash: sleep 3600
       bash: sleep 15; minio server --console-address ":$MINIO_CONSOLE_PORT" $SERVER_LIST
-      paths:
-        - <- `${volume_local}/data1:/data1`
-        - <- `${volume_local}/data2:/data2`
+      # paths:
+      #   - <- `${volume_local}/data1:/data1`
+      #   - <- `${volume_local}/data2:/data2`
 
   # volumes:
   #   important-data:
   #       size: 60
   #       kind: SSD
   #       path: <- $volume-data
-
   variables:
-    defines: variables
     console_port:
       env: MINIO_CONSOLE_PORT
       type: int
@@ -44,24 +42,18 @@ minio-common:
     volume_local:
       type: string
       value: <- `${monk-volume-path}/monk-minio`
-    minio1_dns:
-      env: MINIO1_DNS
-      type: string
-      value: <- connection-hostname("minio1")
-    minio1_data:
-      type: string
-      value: <- `http://${minio1_dns}/data1 http://${minio1_dns}/data2`
-    minio2_dns:
-      env: MINIO2_DNS
-      type: string
-      value: <- connection-hostname("minio2")
-    minio2_data:
-      type: string
-      value: <- `http://${minio2_dns}/data1 http://${minio2_dns}/data2`
-    minio_servers:
-      env: SERVER_LIST
-      type: string
-      value: <- `${minio1_data} ${minio2_data}`
+    # minio1_dns:
+    #   env: MINIO1_DNS
+    #   type: string
+    #   value: <- connection-hostname("minio1")
+    # minio2_dns:
+    #   env: MINIO2_DNS
+    #   type: string
+    #   value: <- connection-hostname("minio2")
+    # minio_servers:
+    #   env: SERVER_LIST
+    #   type: string
+    #   value: <- `http://${minio1_dns}/data1 http://${minio2_dns}/data2`
     minio_admin_password:
       env: MINIO_ROOT_PASSWORD
       value: <- $monk_minio_admin_password
@@ -82,16 +74,22 @@ minio1:
   defines: runnable
   inherits: minio/minio-common
   variables:
-    defines: variables
     volume_local:
       type: string
       value: <- `${monk-volume-path}/monk-minio1`
+    minio2_dns:
+      env: MINIO2_DNS
+      type: string
+      value: <- connection-hostname("minio2")
+    minio_servers:
+      env: SERVER_LIST
+      type: string
+      value: <- `http://${minio1_dns}/data1 http://${minio2_dns}/data2`
 
 minio2:
   defines: runnable
   inherits: minio/minio-common
   variables:
-    defines: variables
     volume_local:
       type: string
       value: <- `${monk-volume-path}/monk-minio2`
@@ -118,7 +116,6 @@ nginx:
             server {{ v "minio2_dns" }}:9000;
             server {{ v "minio1_dns" }}:9000;
         }
-
         upstream console {
             ip_hash;
             server {{ v "minio2_dns" }}:9001;
@@ -131,19 +128,16 @@ nginx:
           client_max_body_size 0;
           proxy_buffering off;
           proxy_request_buffering off;
-
           location / {
               proxy_set_header Host $http_host;
               proxy_set_header X-Real-IP $remote_addr;
               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
               proxy_set_header X-Forwarded-Proto $scheme;
-
               proxy_connect_timeout 300;
               # Default is HTTP/1, keepalive is only enabled in HTTP/1.1
               proxy_http_version 1.1;
               proxy_set_header Connection "";
               chunked_transfer_encoding off;
-
               proxy_pass http://minio;
           }
         }
@@ -154,7 +148,6 @@ nginx:
             client_max_body_size 0;
             proxy_buffering off;
             proxy_request_buffering off;
-
             location / {
                 proxy_set_header Host $http_host;
                 proxy_set_header X-Real-IP $remote_addr;
@@ -166,22 +159,20 @@ nginx:
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
-                
                 chunked_transfer_encoding off;
-
                 proxy_pass http://console;
             }
         }
-      mode: 511
+      mode: 0644
       container: minio-reverse-proxy
       path: /opt/bitnami/nginx/conf/server_blocks/reverse_proxy.conf
   containers:
-   minio-reverse-proxy:
+    minio-reverse-proxy:
       image-tag: latest
       image: bitnami/nginx
       ports:
-        - <- `0.0.0.0:${listen_api_port}:9000`
-        - <- `0.0.0.0:${listen_port}:9001`
+        - 9000
+        - 9001
   variables:
     minio2_dns:
       type: string
