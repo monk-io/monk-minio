@@ -1,0 +1,58 @@
+---
+namespace: minio
+
+base:
+  defines: runnable
+  metadata:
+    name: MinIO | High Performance, Kubernetes Native Object Storage
+    description: |
+      Minio is an open-source, cloud-native object storage system that is designed to be highly scalable and performant.
+
+      It is built to be compatible with Amazon S3 APIs, making it easy to integrate with existing cloud infrastructure. With Minio, users can store and manage large amounts of unstructured data, such as images, videos, and documents, in a distributed and fault-tolerant manner. It offers features such as dataencryption, versioning, and access control, making it a secure and reliable option for storing sensitive data.
+
+      Minio can be deployed on-premises or in the cloud, and it supports a wide range of storage backends,including local disks, NAS devices, and cloud storage providers. Overall, Minio is a powerful and flexible solution for managing object storage at scale.
+    tags: Object storage, Cloud storage, Distributed storage, S3 compatible, Open source, Data management, File sharing, Backup and recovery, High availability
+    website: https://min.io/
+    publisher: monk.io
+    icon: https://min.io/resources/img/logo.svg
+    private: true
+  containers:
+    minio:
+      image: minio/minio
+  variables:
+    minio_admin_password:
+      env: MINIO_ROOT_PASSWORD
+      value: administrator
+    minio_admin_username:
+      env: MINIO_ROOT_USER
+      value: administrator
+
+minio:
+  defines: runnable
+  inherits: minio/base
+  metadata:
+    private: false
+  containers:
+    minio:
+      bash: minio server --console-address ":$MINIO_CONSOLE_PORT" /data
+      ports:
+        - 9000:9000
+        - 9001:9001
+      paths:
+        - <- `${monk-volume-path}/monk-minio:/data`
+  variables:
+    console_port:
+      env: MINIO_CONSOLE_PORT
+      type: string
+      value: 9001
+  services:
+    server:
+      container: minio
+      port: 9000
+      protocol: tcp
+      host-port: 9000
+    console:
+      container: minio
+      port: 9001
+      protocol: tcp
+      host-port: 9001

@@ -1,0 +1,213 @@
+---
+namespace: rendomname
+
+minio-common:
+  # inherits: minio/base
+  containers:
+    minio:
+      image: bitnami/minio
+  variables:
+    minio_admin_password:
+      env: MINIO_ROOT_PASSWORD
+      value: administrator
+    minio_admin_username:
+      env: MINIO_ROOT_USER
+      value: administrator
+    distributed_mode:
+      env: MINIO_DISTRIBUTED_MODE_ENABLED
+      type: string
+      value: 'yes'
+    nodes:
+      env: MINIO_DISTRIBUTED_NODES
+      type: string
+      value: <- connection-hostname("console-1") "," connection-hostname("console-2") "," connection-hostname("console-3") "," connection-hostname("console-4") concat-all
+    client:
+      env: MINIO_SKIP_CLIENT
+      type: string
+      value: 'yes'
+    minio_admin_password:
+      env: MINIO_ROOT_PASSWORD
+      value: <- $monk_minio_admin_password
+    minio_admin_username:
+      env: MINIO_ROOT_USER
+      value: <- $monk_minio_admin_username
+  connections:
+    server-1:
+      runnable: rendomname/minio1
+      service: server
+    console-1:
+      runnable: rendomname/minio1
+      service: console
+    server-2:
+      runnable: rendomname/minio2
+      service: server
+    console-2:
+      runnable: rendomname/minio2
+      service: console
+    server-3:
+      runnable: rendomname/minio3
+      service: server
+    console-3:
+      runnable: rendomname/minio3
+      service: console
+    server-4:
+      runnable: rendomname/minio4
+      service: server
+    console-4:
+      runnable: rendomname/minio4
+      service: console
+  services:
+    server:
+      container: minio
+      port: 9000
+      protocol: tcp
+    console:
+      container: minio
+      port: 9001
+      protocol: tcp
+
+minio1:
+  defines: runnable
+  inherits: rendomname/minio-common
+
+  containers:
+    minio:
+      ports:
+        - 9000:9000
+        - 9001:9001
+      # paths:
+      #   - <- `${monk-volume-path}/monk-minio/minio-1:/data`
+      # bash: env | sort ; cat /etc/resolv.conf ; sleep 3000
+      # bash: env; sleep 300
+
+minio2:
+  defines: runnable
+  inherits: rendomname/minio-common
+  containers:
+    minio:
+      ports:
+        - 9002:9000
+        - 9003:9001
+      # paths:
+      #   - <- `${monk-volume-path}/monk-minio/minio-2:/data`
+      # bash: env | sort ; cat /etc/resolv.conf ; sleep 3000
+
+minio3:
+  defines: runnable
+  inherits: rendomname/minio-common
+  containers:
+    minio:
+      ports:
+        - 9004:9000
+        - 9005:9001
+      # paths:
+      #   - <- `${monk-volume-path}/monk-minio/minio-2:/data`
+      # bash: env | sort ; cat /etc/resolv.conf ; sleep 3000
+
+minio4:
+  defines: runnable
+  inherits: rendomname/minio-common
+  containers:
+    minio:
+      ports:
+        - 9006:9000
+        - 9007:9001
+      # paths:
+      #   - <- `${monk-volume-path}/monk-minio/minio-2:/data`
+      # bash: env | sort ; cat /etc/resolv.conf ; sleep 3000
+
+# nginx:
+#   defines: runnable
+#   connections:
+#     minio1-console:
+#       runnable: rendomname/minio1
+#       service: minio-console-svc
+#     minio2-console:
+#       runnable: rendomname/minio2
+#       service: minio-console-svc
+#     minio1:
+#       runnable: rendomname/minio1
+#       service: minio-svc
+#     minio2:
+#       runnable: rendomname/minio2
+#       service: minio-svc
+#   files:
+#     server-def:
+#       contents: |
+#         upstream minio {
+#             server {{ v "minio2_dns" }}:9000;
+#             server {{ v "minio1_dns" }}:9000;
+#         }
+#         upstream console {
+#             ip_hash;
+#             server {{ v "minio2_dns" }}:9001;
+#             server {{ v "minio1_dns" }}:9001;
+#         }
+#         server {
+#           listen 0.0.0.0:{{ v "monk_minio_port" }};
+#           server_name {{ v "server_name" }};
+#           ignore_invalid_headers off;
+#           client_max_body_size 0;
+#           proxy_buffering off;
+#           proxy_request_buffering off;
+#           location / {
+#               proxy_set_header Host $http_host;
+#               proxy_set_header X-Real-IP $remote_addr;
+#               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#               proxy_set_header X-Forwarded-Proto $scheme;
+#               proxy_connect_timeout 300;
+#               # Default is HTTP/1, keepalive is only enabled in HTTP/1.1
+#               proxy_http_version 1.1;
+#               proxy_set_header Connection "";
+#               chunked_transfer_encoding off;
+#               proxy_pass http://minio;
+#           }
+#         }
+#         server {
+#             listen 0.0.0.0:{{ v "monk_console_port" }};
+#             server_name {{ v "server_name" }};
+#             ignore_invalid_headers off;
+#             client_max_body_size 0;
+#             proxy_buffering off;
+#             proxy_request_buffering off;
+#             location / {
+#                 proxy_set_header Host $http_host;
+#                 proxy_set_header X-Real-IP $remote_addr;
+#                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#                 proxy_set_header X-Forwarded-Proto $scheme;
+#                 proxy_set_header X-NginX-Proxy true;
+#                 real_ip_header X-Real-IP;
+#                 proxy_connect_timeout 300;
+#                 proxy_http_version 1.1;
+#                 proxy_set_header Upgrade $http_upgrade;
+#                 proxy_set_header Connection "upgrade";
+#                 chunked_transfer_encoding off;
+#                 proxy_pass http://console;
+#             }
+#         }
+#       mode: 0644
+#       container: minio-reverse-proxy
+#       path: /opt/bitnami/nginx/conf/server_blocks/reverse_proxy.conf
+#   containers:
+#     minio-reverse-proxy:
+#       image-tag: latest
+#       image: bitnami/nginx
+#       ports:
+#         - 80
+#         - 81
+#   variables:
+#     minio1_dns:
+#       type: string
+#       value: <- connection-hostname("minio1") split(".dns.podman") join("")
+#     minio2_dns:
+#       type: string
+#       value: <- connection-hostname("minio2") split(".dns.podman") join("")
+#     proxy-target-port:
+#       type: string
+#       value: 80
+#   depends:
+#     wait-for:
+#       runnables:
+#         - minio/minio1
+#         - minio/minio2
+#       timeout: 120

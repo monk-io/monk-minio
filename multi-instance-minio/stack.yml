@@ -1,5 +1,5 @@
 ---
-namespace: minio
+namespace: rendomname
 
 stack:
   defines: process-group
@@ -12,25 +12,29 @@ stack:
     publisher: monk.io
     icon: https://min.io/resources/img/logo.svg
   runnable-list:
-    - minio/minio1
-    - minio/minio2
-    - minio/nginx
+    - rendomname/minio1
+    - rendomname/minio2
+    - rendomname/minio3
+    - rendomname/minio4
+    # - minio/nginx
   variables:
-    monk_minio_port:
-      env: MINIO_PORT
-      type: int
-      value: 9000
-    monk_console_port:
-      env: MINIO_CONSOLE_PORT
-      type: int
-      value: 9001
+    # monk_minio_port:
+    #   env: MINIO_PORT
+    #   type: int
+    #   value: 9000
+    # monk_console_port:
+    #   env: MINIO_CONSOLE_PORT
+    #   type: int
+    #   value: 9001
     monk_minio_admin_password:
+      type: string
       value: password
     monk_minio_admin_username:
+      type: string
       value: admin
-    server_name:
-      value: minio.monk.io
-    listen_port:
-      value: 81
-    listen_api_port:
-      value: 80
+  #   server_name:
+  #     value: minio.monk.io
+  #   listen_port:
+  #     value: 81
+  #   listen_api_port:
+  #     value: 80
