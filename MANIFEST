@@ -1,2 +1,2 @@
-REPO minio
-LOAD minio.yml stack.yml
+REPO monk-minio
+LOAD minio.yml
