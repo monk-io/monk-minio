@@ -35,9 +35,6 @@ minio:
   containers:
     minio:
       bash: minio server --console-address ":$MINIO_CONSOLE_PORT" /data
-      ports:
-        - 9000:9000
-        - 9001:9001
       paths:
         - <- `${monk-volume-path}/monk-minio:/data`
   variables:
