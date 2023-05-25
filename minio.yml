@@ -9,7 +9,7 @@ base:
       Minio is an open-source, cloud-native object storage system that is designed to be highly scalable and performant.
       It is built to be compatible with Amazon S3 APIs, making it easy to integrate with existing cloud infrastructure. With Minio, users can store and manage large amounts of unstructured data, such as images, videos, and documents, in a distributed and fault-tolerant manner. It offers features such as dataencryption, versioning, and access control, making it a secure and reliable option for storing sensitive data.
       Minio can be deployed on-premises or in the cloud, and it supports a wide range of storage backends,including local disks, NAS devices, and cloud storage providers. Overall, Minio is a powerful and flexible solution for managing object storage at scale.
-    tags: Object storage, Cloud storage, Distributed storage, S3 compatible, Open source, Data management, File sharing, Backup and recovery, High availability
+    tags: s3 compatible, high availability, data management, file sharing, object storage, backup and recovery, distributed storage, open source
     website: https://min.io/
     publisher: monk.io
     icon: https://min.io/resources/img/logo.svg
