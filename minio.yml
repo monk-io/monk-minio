@@ -1,4 +1,3 @@
----
 namespace: minio
 
 base:
@@ -7,8 +6,8 @@ base:
     name: MinIO | High Performance, Kubernetes Native Object Storage
     description: |
       Minio is an open-source, cloud-native object storage system that is designed to be highly scalable and performant.
-      It is built to be compatible with Amazon S3 APIs, making it easy to integrate with existing cloud infrastructure. With Minio, users can store and manage large amounts of unstructured data, such as images, videos, and documents, in a distributed and fault-tolerant manner. It offers features such as dataencryption, versioning, and access control, making it a secure and reliable option for storing sensitive data.
-      Minio can be deployed on-premises or in the cloud, and it supports a wide range of storage backends,including local disks, NAS devices, and cloud storage providers. Overall, Minio is a powerful and flexible solution for managing object storage at scale.
+      It is built to be compatible with Amazon S3 APIs, making it easy to integrate with existing cloud infrastructure. With Minio, users can store and manage large amounts of unstructured data, such as images, videos, and documents, in a distributed and fault-tolerant manner. It offers features such as data encryption, versioning, and access control, making it a secure and reliable option for storing sensitive data.
+      Minio can be deployed on-premises or in the cloud, and it supports a wide range of storage backends, including local disks, NAS devices, and cloud storage providers. Overall, Minio is a powerful and flexible solution for managing object storage at scale.
     tags: s3 compatible, high availability, data management, file sharing, object storage, backup and recovery, distributed storage, open source
     website: https://min.io/
     publisher: monk.io
@@ -18,9 +17,10 @@ base:
   containers:
     minio:
       image: minio/minio
+      image-tag: latest
       bash: minio server /data
 
-minio:
+minio-server:
   defines: runnable
   inherits: minio/base
   metadata:
@@ -29,26 +29,33 @@ minio:
     minio:
       bash: minio server --console-address ":$MINIO_CONSOLE_PORT" /data
       paths:
-        - <- `${monk-volume-path}/monk-minio:/data`
+        - <- `${monk-volume-path}/minio-data:/data`
   variables:
-    console_port:
+    api-port:
+      type: int
+      value: 9000
+    console-port:
       env: MINIO_CONSOLE_PORT
-      type: string
+      type: int
       value: 9001
-    minio_admin_password:
+    admin-password:
       env: MINIO_ROOT_PASSWORD
+      type: string
       value: administrator
-    minio_admin_username:
+    admin-username:
       env: MINIO_ROOT_USER
+      type: string
       value: administrator
   services:
-    server:
+    api:
       container: minio
-      port: 9000
+      port: <- `${api-port}`
       protocol: tcp
-      host-port: 9000
+      host-port: <- `${api-port}`
+      publish: false
     console:
       container: minio
-      port: 9001
+      port: <- `${console-port}`
       protocol: tcp
-      host-port: <- `${console_port}`
+      host-port: <- `${console-port}`
+      publish: false
