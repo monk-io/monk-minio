@@ -1,0 +1,143 @@
+---
+title: MinIO
+description: Ready-to-run MinIO container template you can run directly or inherit to integrate S3-compatible object storage into your stack.
+primary_category: storage
+tags: [minio, object-storage, s3, template, runnable, distributed, storage]
+integration_type: template
+hosting_models: [self-hosted]
+website_url: https://min.io/
+docs_url: https://min.io/docs/
+publisher: monk.io
+---
+
+## Overview
+
+This template provides a production‑ready MinIO instance as a Monk runnable. You can:
+
+- Run it directly to get a managed MinIO server with sensible defaults
+- Inherit it in your own runnable to seamlessly add S3-compatible object storage to your stack
+
+It exposes MinIO on port 9000 (API) and 9001 (console), persists data to a host volume, and can be configured with custom admin credentials.
+
+## What this template manages
+
+- MinIO server container (`minio/minio` image, configurable tag)
+- Network services on API (9000) and console (9001) ports
+- Persistent volumes for object storage
+- S3-compatible API
+- Web-based management console
+
+## Quick start (run directly)
+
+1) Load templates
+
+```bash
+monk load MANIFEST
+```
+
+2) Run MinIO with defaults
+
+```bash
+monk run minio/minio-server
+```
+
+3) Customize credentials (recommended via inheritance)
+
+Running directly uses the defaults defined in this template's `variables`. Secrets added with `monk secrets add` will not affect this runnable unless you inherit it and reference those secrets.
+
+- Preferred: inherit and replace variables with `secret("...")` as shown below.
+- Alternative: fork/clone and edit the `variables` in `minio.yml`, then `monk load MANIFEST` and run.
+
+Once started, access the MinIO console at `http://localhost:9001` or use the S3 API at `http://localhost:9000` using the configured credentials.
+
+## Configuration
+
+Key variables you can customize in this template:
+
+```yaml
+variables:
+  api-port: 9000                  # S3 API port
+  console-port: 9001              # Web console port
+  admin-username: "administrator" # Root user (env: MINIO_ROOT_USER)
+  admin-password: "administrator" # Root password (env: MINIO_ROOT_PASSWORD)
+```
+
+Data is persisted under `${monk-volume-path}/minio-data` on the host.
+
+## Use by inheritance (recommended for apps)
+
+Inherit the MinIO runnable in your application and declare a connection. Example:
+
+```yaml
+namespace: myapp
+storage:
+  defines: runnable
+  inherits: minio/minio-server
+  variables:
+    admin-username:
+      value: <- secret("minio-root-user")
+    admin-password:
+      value: <- secret("minio-root-password")
+api:
+  defines: runnable
+  containers:
+    api:
+      image: myorg/api
+  connections:
+    object-storage:
+      runnable: storage
+      service: api
+  variables:
+    s3-endpoint:
+      value: <- connection-hostname("object-storage")
+    s3-access-key:
+      value: <- secret("minio-root-user")
+    s3-secret-key:
+      value: <- secret("minio-root-password")
+```
+
+Then set the secrets once and run your app group:
+
+```bash
+monk secrets add -g minio-root-user="admin"
+monk secrets add -g minio-root-password="STRONG_ADMIN_PASSWORD"
+monk run myapp/api
+```
+
+## Ports and connectivity
+
+- Service: `api` on TCP port `9000` (S3-compatible API)
+- Service: `console` on TCP port `9001` (Web management interface)
+- From other runnables in the same process group, use `connection-hostname("<connection-name>")` to resolve the MinIO host.
+
+## Persistence and configuration
+
+- Data path: `${monk-volume-path}/minio-data:/data`
+- All object data is stored in this persistent volume
+- Data persists across container restarts
+
+## Features
+
+- S3-compatible API
+- High performance for large scale AI/ML and data lake workloads
+- Data protection (erasure coding)
+- Encryption at rest and in transit
+- Versioning and lifecycle management
+- Multi-cloud gateway capabilities
+- Web-based management console
+
+## Related templates
+
+- See other templates in this repository for complementary services
+- Combine with monitoring tools for observability
+- Integrate with your application stack as needed
+
+## Troubleshooting
+
+- If you changed `admin-password` but the container has existing data, you may need to restart with fresh volumes.
+- Ensure the host volumes are writable by the container user.
+- Check logs:
+
+```bash
+monk logs -l 500 -f minio/minio-server
+```
