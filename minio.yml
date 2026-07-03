@@ -28,8 +28,12 @@ minio-server:
   containers:
     minio:
       bash: minio server --console-address ":$MINIO_CONSOLE_PORT" /data
-      paths:
-        - <- `${monk-volume-path}/minio-data:/data`
+      mounted-volumes:
+        minio-data:
+          path: /data
+  volumes:
+    minio-data:
+      kind: local
   variables:
     api-port:
       type: int
